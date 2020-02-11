@@ -1,43 +1,52 @@
-import {ElementPaint, parseStackingContexts, StackingContext} from '../stacking-context';
-import {asString, Color, isTransparent} from '../../css/types/color';
-import {Logger} from '../../core/logger';
-import {ElementContainer} from '../../dom/element-container';
-import {BORDER_STYLE} from '../../css/property-descriptors/border-style';
-import {CSSParsedDeclaration} from '../../css/index';
-import {TextContainer} from '../../dom/text-container';
-import {Path, transformPath} from '../path';
-import {BACKGROUND_CLIP} from '../../css/property-descriptors/background-clip';
-import {BoundCurves, calculateBorderBoxPath, calculateContentBoxPath, calculatePaddingBoxPath} from '../bound-curves';
-import {isBezierCurve} from '../bezier-curve';
-import {Vector} from '../vector';
-import {CSSImageType, CSSURLImage, isLinearGradient, isRadialGradient} from '../../css/types/image';
-import {parsePathForBorder} from '../border';
-import {Cache} from '../../core/cache-storage';
-import {calculateBackgroundRendering, getBackgroundValueForIndex} from '../background';
-import {isDimensionToken} from '../../css/syntax/parser';
-import {TextBounds} from '../../css/layout/text';
-import {fromCodePoint, toCodePoints} from 'css-line-break';
-import {ImageElementContainer} from '../../dom/replaced-elements/image-element-container';
-import {contentBox} from '../box-sizing';
-import {CanvasElementContainer} from '../../dom/replaced-elements/canvas-element-container';
-import {SVGElementContainer} from '../../dom/replaced-elements/svg-element-container';
-import {ReplacedElementContainer} from '../../dom/replaced-elements/index';
-import {EffectTarget, IElementEffect, isClipEffect, isTransformEffect} from '../effects';
-import {contains} from '../../core/bitwise';
-import {calculateGradientDirection, calculateRadius, processColorStops} from '../../css/types/functions/gradient';
-import {FIFTY_PERCENT, getAbsoluteValue} from '../../css/types/length-percentage';
-import {TEXT_DECORATION_LINE} from '../../css/property-descriptors/text-decoration-line';
-import {FontMetrics} from '../font-metrics';
-import {DISPLAY} from '../../css/property-descriptors/display';
-import {Bounds} from '../../css/layout/bounds';
-import {LIST_STYLE_TYPE} from '../../css/property-descriptors/list-style-type';
-import {computeLineHeight} from '../../css/property-descriptors/line-height';
-import {CHECKBOX, INPUT_COLOR, InputElementContainer, RADIO} from '../../dom/replaced-elements/input-element-container';
-import {TEXT_ALIGN} from '../../css/property-descriptors/text-align';
-import {TextareaElementContainer} from '../../dom/elements/textarea-element-container';
-import {SelectElementContainer} from '../../dom/elements/select-element-container';
-import {IFrameElementContainer} from '../../dom/replaced-elements/iframe-element-container';
-import {TextShadow} from '../../css/property-descriptors/text-shadow';
+import { fromCodePoint, toCodePoints } from 'css-line-break';
+
+import { contains } from '../../core/bitwise';
+import { Cache } from '../../core/cache-storage';
+import { Logger } from '../../core/logger';
+import { CSSParsedDeclaration } from '../../css/index';
+import { Bounds } from '../../css/layout/bounds';
+import { TextBounds } from '../../css/layout/text';
+import { BACKGROUND_CLIP } from '../../css/property-descriptors/background-clip';
+import { BORDER_STYLE } from '../../css/property-descriptors/border-style';
+import { DISPLAY } from '../../css/property-descriptors/display';
+import { computeLineHeight } from '../../css/property-descriptors/line-height';
+import { LIST_STYLE_TYPE } from '../../css/property-descriptors/list-style-type';
+import { TEXT_ALIGN } from '../../css/property-descriptors/text-align';
+import { TEXT_DECORATION_LINE } from '../../css/property-descriptors/text-decoration-line';
+import { TextShadow } from '../../css/property-descriptors/text-shadow';
+import { isDimensionToken } from '../../css/syntax/parser';
+import { asString, Color, isTransparent } from '../../css/types/color';
+import {
+    calculateGradientDirection, calculateRadius, processColorStops
+} from '../../css/types/functions/gradient';
+import {
+    CSSImageType, CSSURLImage, isLinearGradient, isRadialGradient
+} from '../../css/types/image';
+import { FIFTY_PERCENT, getAbsoluteValue } from '../../css/types/length-percentage';
+import { ElementContainer } from '../../dom/element-container';
+import { SelectElementContainer } from '../../dom/elements/select-element-container';
+import { TextareaElementContainer } from '../../dom/elements/textarea-element-container';
+import { CanvasElementContainer } from '../../dom/replaced-elements/canvas-element-container';
+import { IFrameElementContainer } from '../../dom/replaced-elements/iframe-element-container';
+import { ImageElementContainer } from '../../dom/replaced-elements/image-element-container';
+import { ReplacedElementContainer } from '../../dom/replaced-elements/index';
+import {
+    CHECKBOX, INPUT_COLOR, InputElementContainer, RADIO
+} from '../../dom/replaced-elements/input-element-container';
+import { SVGElementContainer } from '../../dom/replaced-elements/svg-element-container';
+import { TextContainer } from '../../dom/text-container';
+import { calculateBackgroundRendering, getBackgroundValueForIndex } from '../background';
+import { isBezierCurve } from '../bezier-curve';
+import { parsePathForBorder } from '../border';
+import {
+    BoundCurves, calculateBorderBoxPath, calculateContentBoxPath, calculatePaddingBoxPath
+} from '../bound-curves';
+import { contentBox } from '../box-sizing';
+import { EffectTarget, IElementEffect, isClipEffect, isTransformEffect } from '../effects';
+import { FontMetrics } from '../font-metrics';
+import { Path, transformPath } from '../path';
+import { ElementPaint, parseStackingContexts, StackingContext } from '../stacking-context';
+import { Vector } from '../vector';
 
 export type RenderConfigurations = RenderOptions & {
     backgroundColor: Color | null;
@@ -157,7 +166,12 @@ export class CanvasRenderer {
         const fontVariant = styles.fontVariant
             .filter(variant => variant === 'normal' || variant === 'small-caps')
             .join('');
-        const fontFamily = styles.fontFamily.join(', ');
+        //const fontFamily = styles.fontFamily.join(', ');
+        const fontFamily = styles.fontFamily
+            .map(fontName => {
+                return fontName.indexOf(' ') === -1 ? fontName : `"${fontName}"`;
+            })
+            .join(', ');
         const fontSize = isDimensionToken(styles.fontSize)
             ? `${styles.fontSize.number}${styles.fontSize.unit}`
             : `${styles.fontSize.number}px`;
